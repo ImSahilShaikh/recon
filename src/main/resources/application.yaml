@@ -1,3 +1,38 @@
 spring:
   application:
     name: recon
+  ai:
+    anthropic:
+      api-key: your-anthropic-api-key-here
+      chat:
+        enabled: false
+    openai:
+      api-key: your-openai-api-key-here
+      chat:
+        enabled: false
+    google:
+      genai:
+        api-key: ${GEMINI_KEY}
+        chat:
+          options:
+            model: gemini-2.5-flash
+    retry:
+      initial-interval: 2000ms   # Wait 2 seconds before first retry
+      max-interval: 15000ms     # Don't wait longer than 15 seconds
+      max-attempts: 3           # Give up after 3 tries
+      multiplier: 2.0           # Exponentially increase wait time
+
+github:
+  token: your-github-token-here
+
+app:
+  ai:
+    active-model: gemini
+
+server:
+  port: 8082
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    org.springframework.web.client: DEBUG

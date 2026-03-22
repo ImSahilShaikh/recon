@@ -4,6 +4,8 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
 }
 
+group = "dev.scout"
+version = "0.0.1-SNAPSHOT"
 description = "AI code reviewer"
 
 java {
@@ -22,12 +24,16 @@ repositories {
     mavenCentral()
 }
 
+extra["springAiVersion"] = "1.1.3"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
 
     // Spring AI
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
+    implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
+
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

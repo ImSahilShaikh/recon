@@ -28,12 +28,14 @@ extra["springAiVersion"] = "1.1.3"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
+    
+    // OpenAPI / Swagger UI
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
     // Spring AI
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
     implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
     implementation("org.springframework.ai:spring-ai-starter-model-google-genai")
-
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

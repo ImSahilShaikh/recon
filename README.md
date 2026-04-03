@@ -2,30 +2,24 @@
 
 Recon is an intelligent code review assistant powered by Spring AI. It automatically analyzes code changes and provides actionable feedback on code quality, security, performance, and more.
 
-## Features
+## 🚀 Features
 
 - **Automated Code Review**: Analyzes diffs and provides structured feedback.
-- **Multiple AI Models**: Configurable to use different AI providers (e.g., Gemini, OpenAI, Anthropic).
-- **GitHub Integration**: Capable of integrating with GitHub to fetch PRs/commits (configuration provided).
-- **Structured Feedback**: Returns reviews in a consistent JSON format covering:
-    - Code Quality & Best Practices
-    - Security Vulnerabilities
-    - Performance Issues
-    - Bug Detection
-    - Test Coverage
+- **GitHub Integration**: Automatically fetches PR diffs and posts inline comments directly on the specific lines where issues occur.
+- **Multiple AI Models**: Support for Gemini, OpenAI, and Anthropic.
+- **Batch & Individual Posting**: Robust review posting that ensures summary feedback is always delivered, even if some inline comments have invalid line numbers.
+- **Swagger/OpenAPI**: Built-in interactive documentation for easy API testing.
 
-## Getting Started
+## 🛠 Prerequisites
 
-### Prerequisites
+- **Java 21**
+- **Gradle**
+- **API Keys**: Gemini (default), OpenAI, or Anthropic.
+- **GitHub Token**: Personal Access Token (PAT) with `repo` scope to post comments.
 
-- Java 21
-- Gradle
-- API Keys for your chosen AI provider (e.g., Gemini, OpenAI, Anthropic)
-- GitHub Token (if using GitHub integration)
+## ⚙️ Configuration
 
-### Configuration
-
-Configure the application in `src/main/resources/application.yaml` or via environment variables.
+Configure the application in `src/main/resources/application.yaml` or via environment variables:
 
 ```yaml
 spring:
@@ -33,58 +27,62 @@ spring:
     google:
       genai:
         api-key: ${GEMINI_KEY}
-        chat:
-          options:
-            model: gemini-2.5-flash
 github:
   token: ${GITHUB_TOKEN}
 
 app:
   ai:
-    active-model: gemini # or openai, anthropic
+    active-model: gemini # options: gemini, openai, anthropic
 ```
 
-### Installation
+## 📦 Installation & Running
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/your-username/recon.git
-    cd recon
-    ```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/recon.git
+   cd recon
+   ```
+2. Build and Run:
+   ```bash
+   ./gradlew bootRun
+   ```
 
-2.  Build the project:
-    ```bash
-    ./gradlew build
-    ```
+The server will start on port `8082`.
 
-### Running the Application
+## 📖 Documentation & API
 
-Run the application using Gradle:
+### Interactive API (Swagger UI)
+Once the app is running, you can access the interactive Swagger documentation to test the API directly:
+👉 [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html)
 
-```bash
-./gradlew bootRun
+### Key Endpoints
+
+#### POST `/api/review`
+Triggers a new code review.
+
+**Request Body (GitHub PR):**
+```json
+{
+  "githubPrUrl": "https://github.com/owner/repo/pull/123"
+}
 ```
 
-The server will start on port `8082` (default).
+**Request Body (Direct Diff):**
+```json
+{
+  "diff": "--- a/Main.java\n+++ b/Main.java\n@@ -1,1 +1,1 @@\n-old line\n+new line"
+}
+```
 
-## Usage
+## 🏗 Project Structure
 
-Send a POST request to the review endpoint with the code diff you want to analyze.
+- `src/main/java/dev/scout/recon/config`: AI and Application configuration.
+- `src/main/java/dev/scout/recon/controller`: REST API endpoints.
+- `src/main/java/dev/scout/recon/service`: 
+    - `ReviewService`: Orchestrates the AI analysis.
+    - `GitHubScmService`: Handles GitHub API interaction (diff fetching & comment posting).
+- `src/main/java/dev/scout/recon/model`: POJOs for API requests and GitHub responses.
 
-*(Note: API endpoints and usage examples would be added here based on the `ReviewController` implementation)*
+## 📄 License
 
-## Project Structure
-
--   `src/main/java/dev/scout/recon`: Main source code.
-    -   `config`: Configuration classes (AI setup, App properties).
-    -   `controller`: REST controllers for handling review requests.
-    -   `model`: Data models for requests, responses, and comments.
-    -   `service`: Business logic for AI review and SCM integration.
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
-
-## License
-
-[MIT](LICENSE)
+This project is licensed under the [MIT License](LICENSE).

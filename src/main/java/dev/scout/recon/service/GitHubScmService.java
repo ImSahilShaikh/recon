@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,25 +48,66 @@ public class GitHubScmService implements ScmService {
         String event = determineEvent(review);
         List<ScmReviewComment> inlineComments = buildInlineComments(review.getComments());
 
-        ScmReviewRequest reviewRequest = ScmReviewRequest.builder()
-                .commitId(commitId)
-                .body(formatSummary(review))
-                .event(event)
-                .comments(inlineComments)
-                .build();
+        log.info("Attempting to post review with {} inline comments", inlineComments.size());
 
         try {
-            restClient.post()
-                    .uri("/repos/{owner}/{repo}/pulls/{prNumber}/reviews", owner, repo, prNumber)
-                    .body(reviewRequest)
-                    .retrieve()
-                    .toBodilessEntity();
-
-            log.info("Successfully posted review to {}/{} PR#{}", owner, repo, prNumber);
+            // Step 1: Try to post the review as a batch (most efficient and clean)
+            submitReviewBatch(owner, repo, prNumber, commitId, formatSummary(review), event, inlineComments);
+            log.info("Successfully posted batch review to {}/{} PR#{}", owner, repo, prNumber);
         } catch (Exception e) {
-            log.error("Failed to post review to GitHub", e);
-            throw new RuntimeException("Failed to post review to GitHub: " + e.getMessage(), e);
+            log.warn("Batch review failed: {}. Attempting individual comment posting...", e.getMessage());
+
+            // Step 2: Post the summary first
+            try {
+                submitReviewBatch(owner, repo, prNumber, commitId, formatSummary(review), "COMMENT", new ArrayList<>());
+                log.info("Summary posted. Now trying individual comments...");
+            } catch (Exception e2) {
+                log.error("Failed to post summary: {}", e2.getMessage());
+            }
+
+            // Step 3: Try to post each comment individually
+            for (ScmReviewComment comment : inlineComments) {
+                try {
+                    postIndividualComment(owner, repo, prNumber, commitId, comment);
+                    log.info("Successfully posted individual comment for {} at line {}", comment.getPath(), comment.getLine());
+                } catch (Exception e3) {
+                    log.error("Failed to post individual comment for {} at line {}: {}", 
+                            comment.getPath(), comment.getLine(), e3.getMessage());
+                }
+            }
         }
+    }
+
+    private void submitReviewBatch(String owner, String repo, int prNumber, String commitId, String summary, String event, List<ScmReviewComment> comments) {
+        ScmReviewRequest request = ScmReviewRequest.builder()
+                .commitId(commitId)
+                .body(summary)
+                .event(event)
+                .comments(comments != null ? comments : new ArrayList<>())
+                .build();
+
+        restClient.post()
+                .uri("/repos/{owner}/{repo}/pulls/{prNumber}/reviews", owner, repo, prNumber)
+                .body(request)
+                .retrieve()
+                .toBodilessEntity();
+    }
+
+    private void postIndividualComment(String owner, String repo, int prNumber, String commitId, ScmReviewComment comment) {
+        // GitHub uses a slightly different model for individual PR comments vs batch review comments
+        // But for most fields it's similar. We need to include the commit_id.
+        var body = new java.util.HashMap<String, Object>();
+        body.put("body", comment.getBody());
+        body.put("commit_id", commitId);
+        body.put("path", comment.getPath());
+        body.put("line", comment.getLine());
+        body.put("side", comment.getSide());
+
+        restClient.post()
+                .uri("/repos/{owner}/{repo}/pulls/{prNumber}/comments", owner, repo, prNumber)
+                .body(body)
+                .retrieve()
+                .toBodilessEntity();
     }
 
     private String fetchLatestCommitId(String owner, String repo, int prNumber) {
@@ -91,7 +133,7 @@ public class GitHubScmService implements ScmService {
 
     private List<ScmReviewComment> buildInlineComments(List<ReviewComment> comments) {
         return comments.stream()
-                .filter(c -> c.getFile() != null && c.getLine() != null)
+                .filter(c -> c.getFile() != null && c.getLine() != null && c.getLine() > 0)
                 .map(c -> ScmReviewComment.builder()
                         .path(c.getFile())
                         .line(c.getLine())

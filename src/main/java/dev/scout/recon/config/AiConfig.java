@@ -32,7 +32,12 @@ public class AiConfig {
                 }
               ]
             }
-            Return only valid JSON, no markdown, no extra text.
+            
+            IMPORTANT:
+            1. For each comment, you MUST provide the 'file' and 'line' number where the issue occurs.
+            2. The 'line' number MUST refer to the line in the "new" side of the diff (the lines starting with '+').
+            3. If you cannot determine the exact line, use the nearest line number from the diff.
+            4. Return only valid JSON, no markdown, no extra text.
             """;
 
     @Bean

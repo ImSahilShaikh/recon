@@ -23,7 +23,7 @@ spring:
       multiplier: 2.0           # Exponentially increase wait time
 
 github:
-  token: your-github-token-here
+  token: ${GITHUB_TOKEN}
 
 app:
   ai:
